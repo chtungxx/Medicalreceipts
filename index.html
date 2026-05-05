@@ -1,0 +1,845 @@
+<DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>醫療開支追蹤 - 完美交單版</title>
+    
+    <style>
+        /* 基礎變數與顏色 */
+        :root {
+            --primary: #D4A5A5; --primary-hover: #C38D8D; --primary-light: #F9EBEB;
+            --bg-color: #F5F6F8; --card-bg: #ffffff;
+            --text-main: #2d3748; --text-muted: #64748b; --text-light: #94a3b8;
+            --border-color: #EBEBEB;
+            --shadow-soft: 0 8px 24px rgba(0,0,0,0.04);
+            --shadow-float: 0 10px 25px rgba(0,0,0,0.15);
+            
+            /* 統計方塊顏色 */
+            --stat-green: #88B7B5; --stat-green-bg: #EBF4F4;
+            --stat-orange: #E2A97A; --stat-orange-bg: #FDF3EB;
+            --stat-blue: #96B0CB; --stat-blue-bg: #EEF3F8;
+            
+            /* 快速按鈕顏色 */
+            --btn-blue-bg: #e0f2fe; --btn-blue-text: #0369a1; --btn-blue-border: #bae6fd;
+            --btn-purple-bg: #f3e8ff; --btn-purple-text: #7e22ce; --btn-purple-border: #e9d5ff;
+            --btn-pink-bg: #fce7f3; --btn-pink-text: #be185d; --btn-pink-border: #fbcfe8;
+        }
+
+        /* 基礎重置 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; padding-bottom: 90px; -webkit-font-smoothing: antialiased; }
+        button, select, input { font-family: inherit; outline: none; }
+        
+        .container { max-width: 900px; margin: 0 auto; position: relative;}
+        
+        /* 頂部 Header */
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .header-icon { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; padding: 12px; border-radius: 14px; box-shadow: 0 4px 10px rgba(212, 165, 165, 0.4); display: flex; align-items: center; justify-content: center;}
+        .header-title { font-size: 22px; font-weight: 900; color: var(--text-main); line-height: 1.2;}
+        .header-subtitle { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-top: 4px;}
+
+        /* 分頁 Tabs */
+        .tabs { display: flex; background: #E2E8F0; padding: 5px; border-radius: 14px; margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .tab-btn { flex: 1; padding: 12px 0; border: none; background: transparent; color: var(--text-muted); font-size: 14px; font-weight: 800; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        /* 卡片與通用排版 */
+        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: var(--shadow-soft); margin-bottom: 20px; }
+        .section-title { font-size: 18px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;}
+        
+        /* 表單設計 */
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; }
+        .form-control { width: 100%; max-width: 100%; padding: 14px 15px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 16px; font-weight: 600; background: #FAFAFA; color: var(--text-main); box-sizing: border-box; -webkit-appearance: none; appearance: none;}
+        .form-control:focus { border-color: var(--primary); background: white; }
+        .form-control[readonly] { background: #F1F5F9; color: var(--text-muted); border-color: #E2E8F0; }
+        select.form-control { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; padding-right: 40px; }
+
+        /* 金額輸入框 */
+        .input-wrapper { display: flex; align-items: center; background: #FAFAFA; border: 2px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: all 0.3s;}
+        .input-wrapper:focus-within { border-color: var(--primary); background: white; }
+        .input-prefix { padding-left: 15px; padding-right: 5px; font-size: 18px; font-weight: 900; color: var(--text-light); }
+        .input-wrapper .form-control { border: none; background: transparent; padding-left: 5px; flex: 1; min-width: 0; font-size: 18px; font-weight: 900; }
+        .input-wrapper .form-control:focus { box-shadow: none; border: none; }
+
+        /* 快速選項按鈕 */
+        .quick-box { background: #FAFAFA; border: 2px solid var(--border-color); border-radius: 16px; padding: 15px; margin-bottom: 20px; }
+        .quick-title { font-size: 11px; font-weight: 900; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .quick-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+        .quick-btn { padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; border-width: 2px; border-style: solid; transition: transform 0.1s;}
+        .quick-btn:active { transform: scale(0.95); }
+        .btn-blue { background: var(--btn-blue-bg); color: var(--btn-blue-text); border-color: var(--btn-blue-border); }
+        .btn-purple { background: var(--btn-purple-bg); color: var(--btn-purple-text); border-color: var(--btn-purple-border); }
+        .btn-pink { background: var(--btn-pink-bg); color: var(--btn-pink-text); border-color: var(--btn-pink-border); }
+
+        /* 理賠勾選框 */
+        .claim-box { display: flex; align-items: flex-start; gap: 12px; background: #FAFAFA; border: 2px solid var(--border-color); padding: 15px; border-radius: 14px; margin-top: 20px; cursor: pointer; transition: all 0.2s;}
+        .claim-box.active { background: var(--primary-light); border-color: var(--primary); }
+        .claim-box input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); margin-top: 2px; }
+        .claim-title { font-size: 15px; font-weight: 800; color: var(--text-main); display: block;}
+        .claim-box.active .claim-title { color: var(--primary-hover); }
+        .claim-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; display: block;}
+
+        .hint-text { background: #EEF3F8; color: #3b82f6; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 700; margin-top: 10px; display: none; }
+        .submit-btn { width: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 18px; font-weight: 900; margin-top: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(212, 165, 165, 0.3); transition: transform 0.1s;}
+        .submit-btn:active { transform: scale(0.98); }
+
+        /* ================= 醫療紀錄分頁設計 ================= */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        @media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        .stat-item { background: white; padding: 15px; border-radius: 16px; border: 2px solid white; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; justify-content: center;}
+        .stat-label { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-val { font-size: 24px; font-weight: 900; }
+        .stat-total { color: var(--text-main); }
+        .stat-claim { background: var(--stat-green-bg); color: var(--stat-green); }
+        .stat-self { background: var(--stat-orange-bg); color: var(--stat-orange); }
+        .stat-physio { background: var(--stat-blue-bg); color: var(--stat-blue); position: relative;}
+        .progress-bar { width: 100%; height: 6px; background: white; border-radius: 3px; margin-top: 8px; overflow: hidden;}
+        .progress-fill { height: 100%; background: var(--stat-blue); }
+
+        .list-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        .badge { background: #F1F5F9; color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+        .export-btn { background: var(--text-main); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;}
+        
+        .filters { display: flex; flex-wrap: wrap; gap: 10px; background: #FAFAFA; border: 2px solid var(--border-color); padding: 12px; border-radius: 14px; margin-bottom: 15px; align-items: flex-end;}
+        .filter-col { flex: 1; min-width: 120px; }
+        .filter-col .form-label { font-size: 11px; }
+        .filter-col .form-control { padding: 10px; font-size: 14px; }
+        .clear-btn { background: white; border: 2px solid var(--border-color); color: var(--text-muted); padding: 10px 15px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px;}
+
+        /* 獨立上下拉軸區塊 */
+        .scroll-area { height: 55vh; max-height: 550px; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 5px 5px 60px 5px; display: block; }
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
+        /* 紀錄明細卡片 */
+        .record-item { background: white; border: 2px solid var(--border-color); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; margin-bottom: 15px; transition: border-color 0.2s;}
+        .record-item.selected { border-color: var(--primary); background: var(--primary-light); }
+        @media(min-width: 600px) { .record-item { flex-direction: row; align-items: center; justify-content: space-between; } }
+        
+        .record-deco { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-top-left-radius: 14px; border-bottom-left-radius: 14px;}
+        .deco-west { background: #94A3B8; }
+        .deco-physio { background: var(--stat-blue); }
+        
+        .record-main { padding-left: 6px; flex: 1; }
+        .record-tags { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;}
+        .tag { font-size: 11px; font-weight: 900; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center;}
+        .tag-date { background: #F1F5F9; color: var(--text-muted); }
+        .tag-cat { background: var(--stat-blue-bg); color: var(--stat-blue); }
+        .tag-claim { background: var(--primary-light); color: var(--primary-hover); border: 1px solid rgba(212,165,165,0.3); }
+        .tag-batch { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+        
+        .record-title { font-size: 17px; font-weight: 900; color: var(--text-main); line-height: 1.3; display: flex; justify-content: space-between; align-items: flex-start;}
+        .record-note { font-size: 12px; font-weight: 800; color: #EF4444; margin-top: 4px; }
+        .record-note.gray { color: var(--text-light); }
+
+        .record-amts { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 12px; }
+        @media(min-width: 600px) { .record-amts { border-top: none; padding-top: 0; justify-content: flex-end; gap: 20px; } }
+        .amt-box { display: flex; flex-direction: column; align-items: flex-end; }
+        .amt-box .lbl { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; opacity: 0.7;}
+        .amt-box .val { font-size: 18px; font-weight: 900; line-height: 1;}
+        .c-total { color: var(--text-main); }
+        .c-claim { color: #10B981; } 
+        .c-self { color: #F59E0B; } 
+
+        .action-btn { background: #FEF2F2; color: #EF4444; border: none; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; padding: 0;}
+        
+        .check-wrap { margin-left: 10px; display: flex; align-items: center;}
+        .check-wrap input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--primary); cursor: pointer; transform: scale(1.2);}
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); font-weight: 800; }
+
+        /* ================= 第三頁：保險紀錄設計 ================= */
+        .batch-card { background: white; border: 2px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-soft); }
+        .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; padding-bottom: 15px; border-bottom: 2px dashed var(--border-color);}
+        .batch-period { font-size: 14px; font-weight: 900; color: var(--text-muted); background: #F1F5F9; padding: 6px 12px; border-radius: 8px;}
+        .status-select { font-size: 13px; font-weight: 800; padding: 6px 30px 6px 12px; border-radius: 8px; border: 2px solid; cursor: pointer; outline: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;}
+        .status-processing { background-color: #EFF6FF; color: #2563EB; border-color: #BFDBFE; }
+        .status-success { background-color: #ECFDF5; color: #059669; border-color: #A7F3D0; }
+        .status-returned { background-color: #FEF2F2; color: #DC2626; border-color: #FECACA; }
+        
+        .batch-info { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;}
+        .batch-date { font-size: 13px; font-weight: 800; color: var(--text-muted); display: flex; align-items: center; gap: 6px;}
+        .batch-amt { text-align: right; }
+        .batch-amt .lbl { font-size: 11px; font-weight: 900; color: var(--text-light); text-transform: uppercase; margin-bottom: 2px;}
+        .batch-amt .val { font-size: 24px; font-weight: 900; color: #10B981; line-height: 1;}
+        
+        .batch-items { background: #FAFAFA; border-radius: 12px; padding: 12px; border: 1px solid var(--border-color);}
+        .b-item { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 6px 0; border-bottom: 1px solid #E2E8F0; color: var(--text-main);}
+        .b-item:last-child { border-bottom: none; }
+        .b-item-date { color: var(--text-muted); width: 85px; }
+        .b-item-name { flex: 1; padding: 0 10px; }
+        .b-item-amt { font-weight: 900; color: #10B981; }
+
+        /* 底部浮動操作列 (用於提交保險) */
+        .selection-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text-main); padding: 12px 20px; border-radius: 20px; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-float); z-index: 90; width: 90%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1);}
+        .selection-bar.show { display: flex; animation: slideUp 0.3s forwards; }
+        @keyframes slideUp { from { bottom: -80px; opacity: 0; } to { bottom: 20px; opacity: 1; } }
+        .sel-text { color: white; font-weight: 800; font-size: 14px; }
+        .btn-submit-batch { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px;}
+        .btn-submit-batch:hover { background: var(--primary-hover); }
+
+        /* 彈窗 */
+        .modal-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(3px);}
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; box-shadow: var(--shadow-float);}
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer;}
+        .btn-cancel { background: #F1F5F9; color: var(--text-muted); }
+        .btn-confirm { background: #EF4444; color: white; }
+
+        #toast { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; padding: 12px 24px; border-radius: 20px; font-weight: 800; font-size: 14px; transition: bottom 0.3s; z-index: 150; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">✅ 記錄已成功加入！</div>
+
+    <!-- 刪除彈窗 -->
+    <div id="deleteModal" class="modal-bg">
+        <div class="modal-content">
+            <h3 style="font-size: 18px; font-weight: 900; margin-bottom: 10px; color: #EF4444;" id="delTitle">確定刪除此記錄？</h3>
+            <p style="font-size: 13px; color: var(--text-muted); font-weight: 700;" id="delDesc">刪除後相關理賠金額將會重新計算。</p>
+            <div class="modal-btns">
+                <button class="modal-btn btn-cancel" onclick="closeModal('deleteModal')">取消</button>
+                <button class="modal-btn btn-confirm" onclick="confirmDelete()">刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立保險批次彈窗 (再三確認) -->
+    <div id="batchModal" class="modal-bg">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="font-size: 20px; font-weight: 900; margin-bottom: 15px; color: var(--text-main);">📄 確認組合保險單據</h3>
+            
+            <p style="font-size: 14px; color: var(--text-muted); font-weight: 700; margin-bottom: 15px; line-height: 1.6;" id="batchSummaryText"></p>
+            
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 14px; border-radius: 12px; margin-bottom: 20px; text-align: left;">
+                <p style="font-size: 13px; color: #D97706; font-weight: 900; margin-bottom: 4px;">⚠️ 請再三確認：</p>
+                <p style="font-size: 12px; color: #92400E; font-weight: 600; line-height: 1.4;">單據一旦組合並提交，將會被標記為「已交單」並移至「保險理賠」頁面。您確定所選的單據正確無誤嗎？</p>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 5px;">
+                <label class="form-label" style="color: var(--text-main);">填寫向保險公司提交的日期：</label>
+                <input type="date" id="batchSubmitDate" class="form-control">
+            </div>
+
+            <div class="modal-btns">
+                <button class="modal-btn btn-cancel" onclick="closeModal('batchModal')">返回修改</button>
+                <button class="modal-btn" style="background: var(--primary); color: white;" onclick="confirmCreateBatch()">確認並建立</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部浮動操作列 -->
+    <div id="selectionBar" class="selection-bar">
+        <span class="sel-text" id="selCount">已選 0 張單據</span>
+        <button class="btn-submit-batch" onclick="openBatchModal()">
+            📦 組合並提交單據
+        </button>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div>
+                <div class="header-title">醫療開支追蹤</div>
+                <div class="header-subtitle">Medical Expense Tracker</div>
+            </div>
+        </div>
+
+        <!-- 標籤切換 -->
+        <div class="tabs">
+            <button id="tab-add" class="tab-btn active" onclick="switchTab('add')">📝 新增紀錄</button>
+            <button id="tab-list" class="tab-btn" onclick="switchTab('list')">📋 醫療紀錄</button>
+            <button id="tab-batch" class="tab-btn" onclick="switchTab('batch')">🏢 保險理賠</button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 頁面 1：新增紀錄 -->
+        <!-- ========================================== -->
+        <div id="view-add" style="display: block;">
+            <div class="card">
+                <div class="section-title">新增醫療開支</div>
+                
+                <!-- 快速選項 -->
+                <div class="quick-box">
+                    <div class="quick-title">點擊自動填寫</div>
+                    <div class="quick-btns">
+                        <button class="quick-btn btn-blue" onclick="quickSelect('西醫治療費', '政府骨科門診')">🦴 政府骨科 ($250)</button>
+                        <button class="quick-btn btn-purple" onclick="quickSelect('物理治療費', '政府物理治療')">🏃🏼‍♀️ 政府物治 ($250)</button>
+                        <button class="quick-btn btn-pink" onclick="quickSelect('物理治療費', '政府職業治療')">💼 政府職治 ($250)</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" id="inputDate" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">治療項目</label>
+                    <select id="inputSubcategory" class="form-control" onchange="handleSelection()">
+                        <option value="" disabled selected>請選擇項目...</option>
+                        <optgroup label="西醫治療費">
+                            <option value="MRI檢查費" data-cat="西醫治療費">MRI檢查費 (自填)</option>
+                            <option value="傷口護理費用" data-cat="西醫治療費" data-amt="50">傷口護理費用 ($50)</option>
+                            <option value="政府門診" data-cat="西醫治療費">政府門診 (自填)</option>
+                            <option value="私家門診" data-cat="西醫治療費">私家門診 (自填)</option>
+                            <option value="政府骨科門診" data-cat="西醫治療費" data-amt="250">政府骨科門診 ($250)</option>
+                        </optgroup>
+                        <optgroup label="物理及職業治療費">
+                            <option value="私人物理治療" data-cat="物理治療費">私人物理治療 (自填)</option>
+                            <option value="政府物理治療" data-cat="物理治療費" data-amt="250">政府物理治療 ($250)</option>
+                            <option value="政府職業治療" data-cat="物理治療費" data-amt="250">政府職業治療 ($250)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">金額 (HKD)</label>
+                    <div class="input-wrapper">
+                        <div class="input-prefix">$</div>
+                        <input type="number" id="inputAmount" class="form-control" placeholder="0">
+                    </div>
+                </div>
+
+                <input type="hidden" id="inputCategory">
+
+                <label id="claimBox" class="claim-box" onclick="setTimeout(updateUI, 10)">
+                    <input type="checkbox" id="inputClaimed">
+                    <div>
+                        <span class="claim-title">準備申請保險理賠</span>
+                        <span class="claim-desc">勾選後將自動計算理賠金額</span>
+                    </div>
+                </label>
+
+                <div id="physioHint" class="hint-text">
+                    💡 提示：物理/職業治療每次最多理賠 <b>$400</b>，總上限 <b>10 次</b>。
+                </div>
+
+                <button class="submit-btn" onclick="addRecord()">加入醫療記錄</button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 頁面 2：醫療紀錄 -->
+        <!-- ========================================== -->
+        <div id="view-list" style="display: none;">
+            
+            <div class="stats-grid">
+                <div class="stat-item stat-total">
+                    <div class="stat-label">總開支</div>
+                    <div class="stat-val" id="statTotal">$0</div>
+                </div>
+                <div class="stat-item stat-claim">
+                    <div class="stat-label">保險可理賠</div>
+                    <div class="stat-val" id="statClaim">$0</div>
+                </div>
+                <div class="stat-item stat-self">
+                    <div class="stat-label">自行付費</div>
+                    <div class="stat-val" id="statSelf">$0</div>
+                </div>
+                <div class="stat-item stat-physio">
+                    <div class="stat-label">物理/職業治療</div>
+                    <div style="display:flex; align-items:baseline; gap:4px;">
+                        <span class="stat-val" id="statPhysioVal">0</span>
+                        <span style="font-size:12px; font-weight:800; opacity:0.7;">/ 10 次</span>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="statBar" style="width:0%;"></div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="list-header-actions">
+                    <div class="section-title" style="margin:0;">醫療紀錄 <span class="badge" id="recordCount">共 0 筆</span></div>
+                    <!-- 所見即所得 Excel 匯出 -->
+                    <button class="export-btn" onclick="exportExcel()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        匯出 Excel 紀錄
+                    </button>
+                </div>
+
+                <!-- 篩選區 加入保險理賠選項 -->
+                <div class="filters">
+                    <div class="filter-col">
+                        <label class="form-label">類別</label>
+                        <select id="fCat" class="form-control" onchange="renderList()">
+                            <option value="全部">全部類別</option>
+                            <option value="西醫治療費">西醫治療</option>
+                            <option value="物理治療費">物理/職業治療</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label class="form-label">理賠狀態</label>
+                        <select id="fClaim" class="form-control" onchange="renderList()">
+                            <option value="全部">所有單據</option>
+                            <option value="是">準備Claim保險</option>
+                            <option value="否">不Claim保險</option>
+                        </select>
+                    </div>
+                    <div class="filter-col">
+                        <label class="form-label">從 (日期)</label>
+                        <input type="date" id="fStart" class="form-control" onchange="renderList()">
+                    </div>
+                    <div class="filter-col">
+                        <label class="form-label">至 (日期)</label>
+                        <input type="date" id="fEnd" class="form-control" onchange="renderList()">
+                    </div>
+                    <button class="clear-btn" onclick="clearFilters()">清除篩選</button>
+                </div>
+
+                <div class="scroll-area" id="listContainer">
+                    <!-- 記錄卡片生成區 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 頁面 3：保險理賠記錄 -->
+        <!-- ========================================== -->
+        <div id="view-batch" style="display: none;">
+            <div class="card">
+                <div class="section-title">已交保險公司記錄</div>
+                <p style="font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 20px;">
+                    在這裡追蹤您提交給保險公司的單據批次狀態。
+                </p>
+                <div class="scroll-area" id="batchContainer" style="max-height: 65vh; padding-bottom: 20px;">
+                    <!-- 批次卡片生成區 -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Pure JavaScript 核心邏輯 -->
+    <script>
+        var records = [];
+        var batches = [];
+        var targetDelId = null;
+        var targetDelType = ''; // 'record' or 'batch'
+        var selectedRecordIds = [];
+        var currentFilteredRecords = []; // 儲存當前篩選後的紀錄供匯出使用
+
+        window.onload = function() {
+            var dateInp = document.getElementById('inputDate');
+            if(dateInp) {
+                var d = new Date();
+                var offset = d.getTimezoneOffset() * 60000;
+                dateInp.value = (new Date(d.getTime() - offset)).toISOString().split('T')[0];
+            }
+            try {
+                if(window.localStorage) {
+                    var rStr = window.localStorage.getItem('med_records_vanilla_v3');
+                    var bStr = window.localStorage.getItem('med_batches_vanilla_v3');
+                    if(rStr) records = JSON.parse(rStr) || [];
+                    if(bStr) batches = JSON.parse(bStr) || [];
+                }
+            } catch(e) {}
+            renderList();
+            renderBatches();
+        };
+
+        function saveData() {
+            try { 
+                if(window.localStorage) {
+                    window.localStorage.setItem('med_records_vanilla_v3', JSON.stringify(records)); 
+                    window.localStorage.setItem('med_batches_vanilla_v3', JSON.stringify(batches));
+                }
+            } catch(e) {}
+        }
+
+        function showToast(msg) {
+            var toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.bottom = '40px';
+            setTimeout(function(){ toast.style.bottom = '-50px'; }, 2500);
+        }
+
+        // === 分頁切換 ===
+        function switchTab(tab) {
+            document.getElementById('tab-add').className = (tab === 'add') ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-list').className = (tab === 'list') ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-batch').className = (tab === 'batch') ? 'tab-btn active' : 'tab-btn';
+            
+            document.getElementById('view-add').style.display = (tab === 'add') ? 'block' : 'none';
+            document.getElementById('view-list').style.display = (tab === 'list') ? 'block' : 'none';
+            document.getElementById('view-batch').style.display = (tab === 'batch') ? 'block' : 'none';
+            
+            if(tab === 'list') { selectedRecordIds = []; renderList(); }
+            if(tab === 'batch') renderBatches();
+            updateSelectionBar();
+        }
+
+        // === 表單互動 ===
+        function quickSelect(cat, sub) {
+            var sel = document.getElementById('inputSubcategory');
+            for(var i=0; i<sel.options.length; i++) {
+                if(sel.options[i].value === sub) { sel.selectedIndex = i; break; }
+            }
+            handleSelection();
+            var btn = event.currentTarget;
+            var txt = btn.innerText;
+            btn.innerText = "✓ 已選取";
+            setTimeout(function(){ btn.innerText = txt; }, 800);
+        }
+
+        function handleSelection() {
+            var sel = document.getElementById('inputSubcategory');
+            var opt = sel.options[sel.selectedIndex];
+            if(!opt || !opt.value) return;
+            
+            var cat = opt.getAttribute('data-cat');
+            var amt = opt.getAttribute('data-amt');
+            var inpAmt = document.getElementById('inputAmount');
+            var cbClaim = document.getElementById('inputClaimed');
+            
+            document.getElementById('inputCategory').value = cat;
+            
+            if(amt) { inpAmt.value = amt; inpAmt.readOnly = true; } 
+            else { inpAmt.value = ''; inpAmt.readOnly = false; }
+
+            // 智能邏輯：只有政府骨科門診預設勾選理賠
+            if(opt.value === '政府骨科門診') cbClaim.checked = true;
+            else cbClaim.checked = false;
+
+            updateUI();
+        }
+
+        function updateUI() {
+            var chk = document.getElementById('inputClaimed').checked;
+            var cat = document.getElementById('inputCategory').value;
+            var box = document.getElementById('claimBox');
+            var hint = document.getElementById('physioHint');
+            
+            if(chk) box.classList.add('active'); else box.classList.remove('active');
+            if(chk && cat === '物理治療費') hint.style.display = 'block'; else hint.style.display = 'none';
+        }
+
+        function addRecord() {
+            var d = document.getElementById('inputDate').value;
+            var s = document.getElementById('inputSubcategory').value;
+            var c = document.getElementById('inputCategory').value;
+            var a = parseFloat(document.getElementById('inputAmount').value);
+            var clm = document.getElementById('inputClaimed').checked;
+
+            if(!s || !c || isNaN(a) || a <= 0 || !d) { alert("請填寫完整資訊"); return; }
+
+            records.push({ id: 'id_'+Date.now(), date: d, category: c, subcategory: s, amount: a, isClaimed: clm, batchId: null, createdAt: Date.now() });
+            saveData();
+            showToast('✅ 記錄已成功加入！');
+
+            document.getElementById('inputSubcategory').selectedIndex = 0;
+            document.getElementById('inputAmount').value = '';
+            document.getElementById('inputAmount').readOnly = false;
+            document.getElementById('inputCategory').value = '';
+            document.getElementById('inputClaimed').checked = false;
+            updateUI();
+        }
+
+        // === 刪除功能 ===
+        function askDelete(id, type) { 
+            targetDelId = id; 
+            targetDelType = type;
+            var title = (type === 'batch') ? '確定刪除此保險批次？' : '確定刪除此記錄？';
+            var desc = (type === 'batch') ? '刪除後，批次內的單據會變回「準備Claim保險」狀態。' : '刪除後相關理賠金額將會重新計算。';
+            document.getElementById('delTitle').innerText = title;
+            document.getElementById('delDesc').innerText = desc;
+            document.getElementById('deleteModal').style.display = 'flex'; 
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function confirmDelete() {
+            if(targetDelId) {
+                if(targetDelType === 'record') {
+                    var arr = [];
+                    for(var i=0; i<records.length; i++) { if(records[i].id !== targetDelId) arr.push(records[i]); }
+                    records = arr;
+                } else if(targetDelType === 'batch') {
+                    var bArr = [];
+                    for(var j=0; j<batches.length; j++) { if(batches[j].id !== targetDelId) bArr.push(batches[j]); }
+                    batches = bArr;
+                    // 將相關 records 的 batchId 清空
+                    for(var k=0; k<records.length; k++) {
+                        if(records[k].batchId === targetDelId) records[k].batchId = null;
+                    }
+                }
+                saveData();
+                renderList();
+                renderBatches();
+            }
+            closeModal('deleteModal');
+        }
+
+        // === 篩選與渲染醫療紀錄 ===
+        function clearFilters() {
+            document.getElementById('fCat').value = '全部';
+            document.getElementById('fClaim').value = '全部';
+            document.getElementById('fStart').value = '';
+            document.getElementById('fEnd').value = '';
+            renderList();
+        }
+
+        function toggleSelect(id, isChecked) {
+            if(isChecked) {
+                if(selectedRecordIds.indexOf(id) === -1) selectedRecordIds.push(id);
+            } else {
+                selectedRecordIds = selectedRecordIds.filter(function(x) { return x !== id; });
+            }
+            updateSelectionBar();
+        }
+
+        function updateSelectionBar() {
+            var bar = document.getElementById('selectionBar');
+            var cnt = document.getElementById('selCount');
+            if(selectedRecordIds.length > 0 && document.getElementById('view-list').style.display !== 'none') {
+                cnt.innerText = '已選取 ' + selectedRecordIds.length + ' 張單據';
+                bar.classList.add('show');
+            } else {
+                bar.classList.remove('show');
+            }
+        }
+
+        function getProcessedRecords() {
+            var arr = records.slice().sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
+            var pCnt = 0; var proc = [];
+            for(var i=0; i<arr.length; i++) {
+                var r = arr[i], cAmt = 0, n = '';
+                if(r.isClaimed) {
+                    if(r.category === '西醫治療費') { cAmt = r.amount; }
+                    else if(r.category === '物理治療費') {
+                        if(pCnt < 10) { cAmt = Math.min(r.amount, 400); pCnt++; n = '('+pCnt+'/10)'; }
+                        else { cAmt = 0; n = '已達上限'; }
+                    }
+                }
+                proc.push({ id: r.id, date: r.date, cat: r.category, sub: r.subcategory, amt: r.amount, claim: r.isClaimed, cAmt: cAmt, sAmt: r.amount-cAmt, note: n, batchId: r.batchId, ts: r.createdAt||0 });
+            }
+            return proc;
+        }
+
+        function renderList() {
+            var proc = getProcessedRecords();
+            proc.sort(function(a,b) {
+                var d1 = new Date(a.date).getTime(), d2 = new Date(b.date).getTime();
+                if(d1 !== d2) return d2 - d1;
+                return b.ts - a.ts;
+            });
+
+            var fC = document.getElementById('fCat').value;
+            var fCl = document.getElementById('fClaim').value;
+            var fS = document.getElementById('fStart').value;
+            var fE = document.getElementById('fEnd').value;
+            
+            var filt = [];
+            var tE=0, tC=0, tS=0, tP=0;
+            
+            for(var j=0; j<proc.length; j++) {
+                var p = proc[j];
+                var matchClaim = (fCl === '全部') || (fCl === '是' && p.claim) || (fCl === '否' && !p.claim);
+                if((fC==='全部'||p.cat===fC) && matchClaim && (!fS||p.date>=fS) && (!fE||p.date<=fE)) {
+                    filt.push(p); tE += p.amt; tC += p.cAmt; tS += p.sAmt;
+                }
+                if(p.cat==='物理治療費' && p.claim && p.cAmt>0) tP++;
+            }
+
+            // 更新全域變數，供 Excel 匯出功能使用
+            currentFilteredRecords = filt;
+
+            document.getElementById('statTotal').innerText = '$'+tE;
+            document.getElementById('statClaim').innerText = '$'+tC;
+            document.getElementById('statSelf').innerText = '$'+tS;
+            document.getElementById('statPhysioVal').innerText = tP;
+            document.getElementById('statBar').style.width = Math.min(tP*10, 100)+'%';
+            document.getElementById('recordCount').innerText = '共 '+filt.length+' 筆';
+
+            var html = '';
+            if(filt.length === 0) {
+                html = '<div class="empty-state">目前沒有符合的紀錄</div>';
+            } else {
+                for(var k=0; k<filt.length; k++) {
+                    var f = filt[k];
+                    var isW = f.cat === '西醫治療費';
+                    var badge = f.claim ? '<span class="tag tag-claim">✓ 準備Claim</span>' : '';
+                    var noteHtml = f.note ? '<div class="record-note '+(f.note==='已達上限'?'':'gray')+'">'+f.note+'</div>' : '';
+                    
+                    var actionHtml = '';
+                    if (f.batchId) {
+                        actionHtml = '<span class="tag tag-batch">🔒 已交單</span>';
+                        badge = ''; // 如果已交單，就不用顯示準備 Claim
+                    } else if (f.claim) {
+                        var isChk = selectedRecordIds.indexOf(f.id) !== -1 ? 'checked' : '';
+                        actionHtml = '<label class="check-wrap"><input type="checkbox" onchange="toggleSelect(\''+f.id+'\', this.checked)" '+isChk+'></label>';
+                    }
+
+                    var clz = (selectedRecordIds.indexOf(f.id) !== -1) ? 'record-item selected' : 'record-item';
+
+                    html += '<div class="'+clz+'">';
+                    html += '<div class="record-deco '+(isW?'deco-west':'deco-physio')+'"></div>';
+                    html += '<div class="record-main">';
+                    html += '<div class="record-title">' + f.sub + actionHtml + '</div>';
+                    html += '<div class="record-tags" style="margin-top:6px;"><span class="tag tag-date">'+f.date+'</span><span class="tag tag-cat">'+f.cat+'</span>'+badge+'</div>';
+                    html += noteHtml;
+                    html += '</div>';
+                    html += '<div class="record-amts">';
+                    html += '<div class="amt-box c-total"><span class="lbl">總開支</span><span class="val">$'+f.amt+'</span></div>';
+                    html += '<div class="amt-box c-claim"><span class="lbl">理賠</span><span class="val">$'+f.cAmt+'</span></div>';
+                    html += '<div class="amt-box c-self"><span class="lbl">自費</span><span class="val">$'+f.sAmt+'</span></div>';
+                    html += '<button class="action-btn" onclick="askDelete(\''+f.id+'\', \'record\')">🗑️</button>';
+                    html += '</div></div>';
+                }
+            }
+            document.getElementById('listContainer').innerHTML = html;
+        }
+
+        // === 保險批次邏輯 (再三確認) ===
+        function openBatchModal() {
+            if(selectedRecordIds.length === 0) return alert('請先勾選要提交的單據！');
+            var d = new Date();
+            var offset = d.getTimezoneOffset() * 60000;
+            document.getElementById('batchSubmitDate').value = (new Date(d.getTime() - offset)).toISOString().split('T')[0];
+            
+            // 計算總結
+            var selRecs = [];
+            var totalAmt = 0;
+            var proc = getProcessedRecords();
+            for(var i=0; i<proc.length; i++) {
+                if(selectedRecordIds.indexOf(proc[i].id) !== -1) {
+                    selRecs.push(proc[i]);
+                    totalAmt += proc[i].cAmt;
+                }
+            }
+
+            document.getElementById('batchSummaryText').innerHTML = '已選取 <b>' + selRecs.length + '</b> 張單據<br>預計理賠總額：<b style="color:#10B981; font-size:18px;">$' + totalAmt + '</b>';
+            document.getElementById('batchModal').style.display = 'flex';
+        }
+
+        function confirmCreateBatch() {
+            var subDate = document.getElementById('batchSubmitDate').value;
+            if(!subDate) return alert('請輸入提交日期');
+
+            var selRecs = [];
+            for(var i=0; i<records.length; i++) {
+                if(selectedRecordIds.indexOf(records[i].id) !== -1) selRecs.push(records[i]);
+            }
+            
+            var dates = selRecs.map(function(r){ return new Date(r.date).getTime(); });
+            var minDate = new Date(Math.min.apply(null, dates));
+            var maxDate = new Date(Math.max.apply(null, dates));
+            
+            var fmt = function(d) { return d.getFullYear() + '年' + (d.getMonth()+1) + '月'; };
+            var pStr = fmt(minDate);
+            if(minDate.getFullYear() !== maxDate.getFullYear() || minDate.getMonth() !== maxDate.getMonth()) {
+                pStr += ' 至 ' + fmt(maxDate);
+            }
+
+            var newBatchId = 'batch_' + Date.now();
+            batches.push({
+                id: newBatchId,
+                submitDate: subDate,
+                periodStr: pStr,
+                status: 'processing', // processing, success, returned
+                recordIds: selectedRecordIds.slice(),
+                createdAt: Date.now()
+            });
+
+            // 更新 records 的 batchId
+            for(var j=0; j<records.length; j++) {
+                if(selectedRecordIds.indexOf(records[j].id) !== -1) {
+                    records[j].batchId = newBatchId;
+                }
+            }
+
+            selectedRecordIds = []; // 清空選取
+            saveData();
+            closeModal('batchModal');
+            showToast('✅ 已建立保險批次！');
+            updateSelectionBar();
+            switchTab('batch');
+        }
+
+        function updateBatchStatus(batchId, sel) {
+            for(var i=0; i<batches.length; i++) {
+                if(batches[i].id === batchId) {
+                    batches[i].status = sel.value;
+                    break;
+                }
+            }
+            saveData();
+            sel.className = 'status-select status-' + sel.value;
+            showToast('✅ 狀態已更新');
+        }
+
+        function renderBatches() {
+            var arr = batches.slice().sort(function(a,b) { return b.createdAt - a.createdAt; });
+            var container = document.getElementById('batchContainer');
+
+            if(arr.length === 0) {
+                container.innerHTML = '<div class="empty-state">目前沒有已交單的記錄</div>';
+                return;
+            }
+
+            var html = '';
+            var proc = getProcessedRecords();
+
+            for(var i=0; i<arr.length; i++) {
+                var b = arr[i];
+                var totalClaim = 0;
+                var itemsHtml = '';
+                
+                for(var p=0; p<proc.length; p++) {
+                    if(proc[p].batchId === b.id) {
+                        totalClaim += proc[p].cAmt;
+                        itemsHtml += '<div class="b-item"><span class="b-item-date">'+proc[p].date+'</span><span class="b-item-name">'+proc[p].sub+'</span><span class="b-item-amt">$'+proc[p].cAmt+'</span></div>';
+                    }
+                }
+
+                var statClass = 'status-' + b.status;
+                
+                html += '<div class="batch-card">';
+                html += '<div class="batch-header">';
+                html += '<span class="batch-period">' + b.periodStr + ' 醫療單據</span>';
+                html += '<select class="status-select ' + statClass + '" onchange="updateBatchStatus(\''+b.id+'\', this)">';
+                html += '<option value="processing" '+(b.status==='processing'?'selected':'')+'>⏳ 單據處理中</option>';
+                html += '<option value="success" '+(b.status==='success'?'selected':'')+'>✅ 單據已成功交</option>';
+                html += '<option value="returned" '+(b.status==='returned'?'selected':'')+'>❌ 單據已退回</option>';
+                html += '</select>';
+                html += '</div>';
+
+                html += '<div class="batch-info">';
+                html += '<div class="batch-date">📝 提交日期：' + b.submitDate + '<br><button style="background:transparent; border:none; color:#EF4444; cursor:pointer; font-size:12px; font-weight:800; margin-top:5px; text-align:left;" onclick="askDelete(\''+b.id+'\', \'batch\')">取消此批次</button></div>';
+                html += '<div class="batch-amt"><div class="lbl">預計總理賠</div><div class="val">$' + totalClaim + '</div></div>';
+                html += '</div>';
+
+                html += '<div class="batch-items">' + itemsHtml + '</div>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // === 匯出 Excel (所見即所得) ===
+        function exportExcel() {
+            if(currentFilteredRecords.length === 0) return alert("當前沒有可匯出的單據紀錄！");
+            var rows = ["\uFEFF日期,類別,治療項目,總額,可理賠金額,交單狀態"];
+            for(var i=0; i<currentFilteredRecords.length; i++) {
+                var r = currentFilteredRecords[i];
+                var statusStr = r.batchId ? "已交單" : (r.claim ? "準備Claim" : "不理賠");
+                rows.push(r.date+','+r.cat+',"'+r.sub+'",'+r.amt+','+r.cAmt+','+statusStr);
+            }
+            var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            var tz = (new Date()).getTimezoneOffset()*60000;
+            link.download = '醫療紀錄匯出_'+(new Date(Date.now()-tz)).toISOString().split('T')[0]+'.csv';
+            try {
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            } catch(e) { alert("如無法下載，請在 Safari 開啟此頁面。"); }
+        }
+    </script>
+</body>
+</html>
+
+
+```
